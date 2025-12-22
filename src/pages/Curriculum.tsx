@@ -246,22 +246,25 @@ function TopicAccordion({ topic, isExpanded, onToggle, index }: { topic: Topic, 
                                         <ReactMarkdown
                                             components={{
                                                 img: ({ node, ...props }) => {
-                                                    const src = props.src || ''
-                                                    if (src.includes('AGENT_ARCHITECTURE') || src.includes('ARCHITECTURE')) return <AgentArchitectureInfographic />
-                                                    if (src.includes('MULTI_AGENT')) return <MultiAgentMindmap />
-                                                    if (src.includes('RAG_PIPELINE')) return <RAGInfographic />
-                                                    if (src.includes('FRAMEWORKS')) return <FrameworkMindmap />
-                                                    if (src.includes('AGENT_LOOP')) return <AgentLoopInfographic />
-                                                    if (src.includes('SAFETY')) return <EthicalGuardrailsInfographic />
-                                                    if (src.includes('PATTERNS')) return <SingleAgentPatternsMindmap />
-                                                    if (src.includes('TOOL_DESIGN')) return <ToolDesignInfographic />
-                                                    if (src.includes('OPTIMIZATION')) return <AdvancedOptimizationMindmap />
-                                                    if (src.includes('EVOLUTION')) return <EvolutionTimeline />
-                                                    if (src.includes('MEMORY_MGMT')) return <MemoryManagementInfographic />
-                                                    if (src.includes('ORCHESTRATION')) return <OrchestrationFlow />
-                                                    if (src.includes('PATTERN_DEEP_DIVE')) return <PatternDeepDive />
-                                                    if (src.includes('TOOL_ANATOMY')) return <ToolAnatomyInfographic />
-                                                    if (src.includes('TOOL_CALL_FLOW')) return <ToolCallFlow />
+                                                    const src = (props.src || '').toUpperCase()
+                                                    const alt = (props.alt || '').toUpperCase()
+
+                                                    if (src.includes('AGENT_ARCHITECTURE') || src.includes('ARCHITECTURE') || alt.includes('ARCHITECTURE')) return <AgentArchitectureInfographic />
+                                                    if (src.includes('MULTI_AGENT') || alt.includes('MULTI-AGENT') || alt.includes('MULTIAGENT')) return <MultiAgentMindmap />
+                                                    if (src.includes('RAG_PIPELINE') || alt.includes('RAG PIPELINE')) return <RAGInfographic />
+                                                    if (src.includes('FRAMEWORKS') || alt.includes('FRAMEWORKS')) return <FrameworkMindmap />
+                                                    if (src.includes('AGENT_LOOP') || alt.includes('AGENT LOOP')) return <AgentLoopInfographic />
+                                                    if (src.includes('SAFETY') || alt.includes('SAFETY') || alt.includes('GUARDRAILS')) return <EthicalGuardrailsInfographic />
+                                                    if (src.includes('PATTERNS') || alt.includes('PATTERNS')) return <SingleAgentPatternsMindmap />
+                                                    if (src.includes('TOOL_DESIGN') || alt.includes('TOOL DESIGN')) return <ToolDesignInfographic />
+                                                    if (src.includes('OPTIMIZATION') || alt.includes('OPTIMIZATION')) return <AdvancedOptimizationMindmap />
+                                                    if (src.includes('EVOLUTION') || alt.includes('EVOLUTION')) return <EvolutionTimeline />
+                                                    if (src.includes('MEMORY_MGMT') || alt.includes('MEMORY')) return <MemoryManagementInfographic />
+                                                    if (src.includes('ORCHESTRATION') || alt.includes('ORCHESTRATION')) return <OrchestrationFlow />
+                                                    if (src.includes('PATTERN_DEEP_DIVE') || alt.includes('PATTERN DEEP DIVE')) return <PatternDeepDive />
+                                                    if (src.includes('TOOL_ANATOMY') || alt.includes('TOOL ANATOMY')) return <ToolAnatomyInfographic />
+                                                    if (src.includes('TOOL_CALL_FLOW') || alt.includes('TOOL CALL FLOW')) return <ToolCallFlow />
+
                                                     return <img {...props} className="rounded-lg shadow-md my-4" />
                                                 }
                                             }}
