@@ -1,36 +1,33 @@
 import { User } from './auth';
+import { supabase } from './supabaseClient';
 
 /**
  * Service to handle user-related database operations.
- * 
- * TODO: Integrate with your actual database (Supabase, Firebase, MongoDB, etc.)
  */
 export const syncUserToDatabase = async (user: User) => {
     console.log('Syncing user to database:', user);
 
-    // EXAMPLE: Supabase integration
-    /*
-    const { data, error } = await supabase
-        .from('users')
-        .upsert({ 
-            email: user.email, 
-            name: user.name, 
-            phone: user.phone,
-            last_login: new Date() 
-        });
-    */
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .upsert({
+                email: user.email,
+                name: user.name,
+                phone: user.phone,
+                last_login: new Date().toISOString()
+            }, { onConflict: 'email' });
 
-    // EXAMPLE: Custom API integration
-    /*
-    const response = await fetch('https://your-api.com/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user)
-    });
-    return response.json();
-    */
+        if (error) {
+            console.error('Error syncing user to Supabase:', error);
+            throw error;
+        }
 
-    // Fallback: Save to localStorage (already handled in auth.ts, 
-    // but this serves as the hook for backend persistence)
-    return Promise.resolve({ success: true, data: user });
+        console.log('User synced successfully:', data);
+        return { success: true, data };
+    } catch (err) {
+        console.error('Unexpected error syncing user:', err);
+        // We don't want to block login if DB sync fails, so we return a success-like response
+        // or re-throw depending on strictness requirements. For now, we'll log and proceed.
+        return { success: false, error: err };
+    }
 };
