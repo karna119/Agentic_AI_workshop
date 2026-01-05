@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Brain, BookOpen, Code, Rocket, Library, Menu, X, ChevronRight, GraduationCap, Award, User, Settings, LogOut, Edit2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
+import { getUser, logout } from '@/lib/auth'
 
 const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
     <Link
@@ -23,14 +24,27 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
 const Layout = ({ children }: { children: React.ReactNode }) => {
     const location = useLocation()
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
-    const [userName, setUserName] = React.useState(() => localStorage.getItem('lms_user_name') || 'Arun Karan')
+    const [user, setUser] = React.useState(getUser())
+    const [userName, setUserName] = React.useState(user?.name || 'Dr.Karunakar')
     const [isEditing, setIsEditing] = React.useState(false)
+
+    React.useEffect(() => {
+        const handleStorage = () => {
+            const updatedUser = getUser()
+            setUser(updatedUser)
+            setUserName(updatedUser?.name || 'Dr.Karunakar')
+        }
+        window.addEventListener('storage', handleStorage)
+        return () => window.removeEventListener('storage', handleStorage)
+    }, [])
 
     const handleNameSave = (e: React.FormEvent) => {
         e.preventDefault()
+        const updatedUser = user ? { ...user, name: userName } : { name: userName, email: '', phone: '' }
+        localStorage.setItem('lms_user', JSON.stringify(updatedUser))
         localStorage.setItem('lms_user_name', userName)
         setIsEditing(false)
-        window.dispatchEvent(new Event('storage')) // Notify other components
+        window.dispatchEvent(new Event('storage'))
     }
 
     const navItems = [
@@ -63,8 +77,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                             <GraduationCap className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-none">Agentic AI</h2>
-                            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1">Foundations & Implementation</p>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-none">Autonomous Agent</h2>
+                            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1">Orchestration Foundations</p>
                         </div>
                     </div>
 
@@ -104,19 +118,29 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                                 </div>
                             </form>
                         ) : (
-                            <div className="flex items-center gap-4 group/profile">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover/profile:bg-primary/10 group-hover/profile:text-primary transition-colors">
-                                    <User className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1">
-                                        <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{userName}</p>
-                                        <button onClick={() => setIsEditing(true)} className="opacity-0 group-hover/profile:opacity-100 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all">
-                                            <Edit2 className="w-3 h-3 text-slate-400" />
-                                        </button>
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-4 group/profile">
+                                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover/profile:bg-primary/10 group-hover/profile:text-primary transition-colors">
+                                        <User className="w-6 h-6" />
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">Agentic Engineer</p>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1">
+                                            <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{userName}</p>
+                                            <button onClick={() => setIsEditing(true)} className="opacity-0 group-hover/profile:opacity-100 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all">
+                                                <Edit2 className="w-3 h-3 text-slate-400" />
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{user?.email || 'Agentic Engineer'}</p>
+                                    </div>
                                 </div>
+                                <Button
+                                    onClick={logout}
+                                    variant="ghost"
+                                    className="w-full justify-start gap-3 h-12 px-4 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all font-bold group"
+                                >
+                                    <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    <span>Logout</span>
+                                </Button>
                             </div>
                         )}
                     </div>
@@ -141,12 +165,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex -space-x-2">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800" />
-                            ))}
-                        </div>
-                        <span className="text-xs font-semibold text-slate-500">1.2k students active</span>
+                        {/* Removed active students count as requested */}
                     </div>
                 </header>
 

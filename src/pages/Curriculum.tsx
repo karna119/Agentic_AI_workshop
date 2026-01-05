@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Brain, Zap, Code, Rocket, BookOpen, ChevronDown, CheckCircle2, Circle, Clock } from 'lucide-react'
+import { Brain, Zap, Code, Rocket, BookOpen, ChevronDown, CheckCircle2, Circle, Clock, RefreshCcw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { curriculum, Module, Topic, SubTopic } from '@/data/curriculum'
@@ -38,10 +38,24 @@ export default function Curriculum() {
     })
     const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null)
     const [isRoadmapOpen, setIsRoadmapOpen] = useState(false)
+    const [completedSubtopics, setCompletedSubtopics] = useState<string[]>(() => {
+        const saved = localStorage.getItem('lms_completed_subtopics')
+        return saved ? JSON.parse(saved) : []
+    })
 
     useEffect(() => {
         localStorage.setItem('lms_last_module_id', activeModuleId)
     }, [activeModuleId])
+
+    const handleMarkComplete = (subtopicTitle: string) => {
+        const id = `${activeModuleId}-${subtopicTitle}`
+        setCompletedSubtopics(prev => {
+            const next = prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
+            localStorage.setItem('lms_completed_subtopics', JSON.stringify(next))
+            window.dispatchEvent(new Event('storage'))
+            return next
+        })
+    }
 
     const activeModule = curriculum.find((m: Module) => m.id === activeModuleId) || curriculum[0]
 
@@ -134,6 +148,9 @@ export default function Curriculum() {
                                             isExpanded={expandedTopicId === topic.id}
                                             onToggle={() => setExpandedTopicId(expandedTopicId === topic.id ? null : topic.id)}
                                             index={i}
+                                            completedSubtopics={completedSubtopics}
+                                            activeModuleId={activeModuleId}
+                                            onMarkComplete={handleMarkComplete}
                                         />
                                     ))}
                                 </TabsContent>
@@ -211,20 +228,50 @@ function ModuleSelector({ module, isActive, onClick }: { module: Module, isActiv
     )
 }
 
-function TopicAccordion({ topic, isExpanded, onToggle, index }: { topic: Topic, isExpanded: boolean, onToggle: () => void, index: number }) {
+function TopicAccordion({ topic, isExpanded, onToggle, index, completedSubtopics, activeModuleId, onMarkComplete }: {
+    topic: Topic,
+    isExpanded: boolean,
+    onToggle: () => void,
+    index: number,
+    completedSubtopics: string[],
+    activeModuleId: string,
+    onMarkComplete: (title: string) => void
+}) {
+    const topicProgress = topic.subtopics.filter(sub => completedSubtopics.includes(`${activeModuleId}-${sub.title}`)).length
+    const isTopicComplete = topicProgress === topic.subtopics.length
+
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className={cn(
+            "bg-white dark:bg-slate-900 border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all",
+            isTopicComplete ? "border-emerald-100 dark:border-emerald-900/30" : "border-slate-200 dark:border-slate-800"
+        )}>
             <div
                 onClick={onToggle}
-                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                className={cn(
+                    "p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors",
+                    isTopicComplete && "bg-emerald-50/30 dark:bg-emerald-950/10"
+                )}
             >
                 <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-500 shrink-0">
-                        {topic.number}
+                    <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors",
+                        isTopicComplete ? "bg-emerald-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                    )}>
+                        {isTopicComplete ? <CheckCircle2 className="w-4 h-4" /> : topic.number}
                     </div>
-                    <h4 className="font-bold text-slate-900 dark:text-white">{topic.title}</h4>
+                    <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">{topic.title}</h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            {topicProgress}/{topic.subtopics.length} Lessons Complete
+                        </p>
+                    </div>
                 </div>
-                <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform shrink-0", isExpanded && "rotate-180")} />
+                <div className="flex items-center gap-4">
+                    {isTopicComplete && (
+                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">Complete</span>
+                    )}
+                    <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform shrink-0", isExpanded && "rotate-180")} />
+                </div>
             </div>
 
             <AnimatePresence>
@@ -235,50 +282,75 @@ function TopicAccordion({ topic, isExpanded, onToggle, index }: { topic: Topic, 
                         exit={{ height: 0 }}
                         className="overflow-hidden bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800"
                     >
-                        <div className="p-8 space-y-10">
-                            {topic.subtopics.map((sub: SubTopic, i: number) => (
-                                <div key={i} className="relative pl-8">
-                                    <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(242,110,28,0.5)]" />
-                                    <h5 className="font-bold text-slate-900 dark:text-white text-lg mb-4">
-                                        {sub.title}
-                                    </h5>
-                                    <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-400 text-[15px] leading-relaxed whitespace-pre-wrap">
-                                        <ReactMarkdown
-                                            components={{
-                                                img: ({ node, ...props }) => {
-                                                    const src = (props.src || '').toUpperCase()
-                                                    const alt = (props.alt || '').toUpperCase()
+                        <div className="p-8 space-y-12">
+                            {topic.subtopics.map((sub: SubTopic, i: number) => {
+                                const isSubComplete = completedSubtopics.includes(`${activeModuleId}-${sub.title}`)
+                                return (
+                                    <div key={i} className="relative pl-10">
+                                        <div className={cn(
+                                            "absolute left-0 top-1.5 w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                                            isSubComplete
+                                                ? "bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                                                : "bg-primary/20 text-primary border border-primary/30"
+                                        )}>
+                                            {isSubComplete ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                                        </div>
+                                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                                            <div className="flex-1">
+                                                <h5 className="font-bold text-slate-900 dark:text-white text-lg mb-4">
+                                                    {sub.title}
+                                                </h5>
+                                                <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-400 text-[15px] leading-relaxed whitespace-pre-wrap">
+                                                    <ReactMarkdown
+                                                        components={{
+                                                            img: ({ node, ...props }) => {
+                                                                const src = (props.src || '').toUpperCase()
+                                                                const alt = (props.alt || '').toUpperCase()
 
-                                                    if (src.includes('AGENT_ARCHITECTURE') || src.includes('ARCHITECTURE') || alt.includes('ARCHITECTURE')) return <AgentArchitectureInfographic />
-                                                    if (src.includes('MULTI_AGENT') || alt.includes('MULTI-AGENT') || alt.includes('MULTIAGENT')) return <MultiAgentMindmap />
-                                                    if (src.includes('RAG_PIPELINE') || alt.includes('RAG PIPELINE')) return <RAGInfographic />
-                                                    if (src.includes('FRAMEWORKS') || alt.includes('FRAMEWORKS')) return <FrameworkMindmap />
-                                                    if (src.includes('AGENT_LOOP') || alt.includes('AGENT LOOP')) return <AgentLoopInfographic />
-                                                    if (src.includes('SAFETY') || alt.includes('SAFETY') || alt.includes('GUARDRAILS')) return <EthicalGuardrailsInfographic />
-                                                    if (src.includes('PATTERNS') || alt.includes('PATTERNS')) return <SingleAgentPatternsMindmap />
-                                                    if (src.includes('TOOL_DESIGN') || alt.includes('TOOL DESIGN')) return <ToolDesignInfographic />
-                                                    if (src.includes('OPTIMIZATION') || alt.includes('OPTIMIZATION')) return <AdvancedOptimizationMindmap />
-                                                    if (src.includes('EVOLUTION') || alt.includes('EVOLUTION')) return <EvolutionTimeline />
-                                                    if (src.includes('MEMORY_MGMT') || alt.includes('MEMORY')) return <MemoryManagementInfographic />
-                                                    if (src.includes('ORCHESTRATION') || alt.includes('ORCHESTRATION')) return <OrchestrationFlow />
-                                                    if (src.includes('PATTERN_DEEP_DIVE') || alt.includes('PATTERN DEEP DIVE')) return <PatternDeepDive />
-                                                    if (src.includes('TOOL_ANATOMY') || alt.includes('TOOL ANATOMY')) return <ToolAnatomyInfographic />
-                                                    if (src.includes('TOOL_CALL_FLOW') || alt.includes('TOOL CALL FLOW')) return <ToolCallFlow />
+                                                                if (src.includes('AGENT_ARCHITECTURE') || src.includes('ARCHITECTURE') || alt.includes('ARCHITECTURE')) return <AgentArchitectureInfographic />
+                                                                if (src.includes('MULTI_AGENT') || alt.includes('MULTI-AGENT') || alt.includes('MULTIAGENT')) return <MultiAgentMindmap />
+                                                                if (src.includes('RAG_PIPELINE') || alt.includes('RAG PIPELINE')) return <RAGInfographic />
+                                                                if (src.includes('FRAMEWORKS') || alt.includes('FRAMEWORKS')) return <FrameworkMindmap />
+                                                                if (src.includes('AGENT_LOOP') || alt.includes('AGENT LOOP')) return <AgentLoopInfographic />
+                                                                if (src.includes('SAFETY') || alt.includes('SAFETY') || alt.includes('GUARDRAILS')) return <EthicalGuardrailsInfographic />
+                                                                if (src.includes('PATTERNS') || alt.includes('PATTERNS')) return <SingleAgentPatternsMindmap />
+                                                                if (src.includes('TOOL_DESIGN') || alt.includes('TOOL DESIGN')) return <ToolDesignInfographic />
+                                                                if (src.includes('OPTIMIZATION') || alt.includes('OPTIMIZATION')) return <AdvancedOptimizationMindmap />
+                                                                if (src.includes('EVOLUTION') || alt.includes('EVOLUTION')) return <EvolutionTimeline />
+                                                                if (src.includes('MEMORY_MGMT') || alt.includes('MEMORY')) return <MemoryManagementInfographic />
+                                                                if (src.includes('ORCHESTRATION') || alt.includes('ORCHESTRATION')) return <OrchestrationFlow />
+                                                                if (src.includes('PATTERN_DEEP_DIVE') || alt.includes('PATTERN DEEP DIVE')) return <PatternDeepDive />
+                                                                if (src.includes('TOOL_ANATOMY') || alt.includes('TOOL ANATOMY')) return <ToolAnatomyInfographic />
+                                                                if (src.includes('TOOL_CALL_FLOW') || alt.includes('TOOL CALL FLOW')) return <ToolCallFlow />
 
-                                                    return <img {...props} className="rounded-lg shadow-md my-4" />
-                                                }
-                                            }}
-                                        >
-                                            {sub.content}
-                                        </ReactMarkdown>
+                                                                return <img {...props} className="rounded-lg shadow-md my-4" />
+                                                            }
+                                                        }}
+                                                    >
+                                                        {sub.content}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                onClick={() => onMarkComplete(sub.title)}
+                                                className={cn(
+                                                    "shrink-0 rounded-xl gap-2 h-10 px-4 font-bold transition-all hover:scale-105 active:scale-95 shadow-lg",
+                                                    isSubComplete
+                                                        ? "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200"
+                                                        : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                                                )}
+                                            >
+                                                {isSubComplete ? (
+                                                    <><RefreshCcw className="w-4 h-4" /> Redo Lesson</>
+                                                ) : (
+                                                    <><CheckCircle2 className="w-4 h-4" /> Complete</>
+                                                )}
+                                            </Button>
+                                        </div>
+                                        {i < topic.subtopics.length - 1 && <div className="h-12 w-px bg-slate-200 dark:bg-slate-800 ml-3 mt-4" />}
                                     </div>
-                                </div>
-                            ))}
-                            <div className="flex justify-end pt-6">
-                                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2 h-11 px-6 font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20">
-                                    <CheckCircle2 className="w-5 h-5" /> Mark Lesson as Complete
-                                </Button>
-                            </div>
+                                )
+                            })}
                         </div>
                     </motion.div>
                 )}

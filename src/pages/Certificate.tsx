@@ -8,11 +8,11 @@ import { RoadmapModal } from '@/components/RoadmapModal'
 
 export default function Certificate() {
     const [isRoadmapOpen, setIsRoadmapOpen] = useState(false)
-    const [userName, setUserName] = useState(() => localStorage.getItem('lms_user_name') || 'Arun Karan')
+    const [userName, setUserName] = useState(() => localStorage.getItem('lms_user_name') || 'Dr.Karunakar')
 
     useEffect(() => {
         const handleStorage = () => {
-            setUserName(localStorage.getItem('lms_user_name') || 'Arun Karan')
+            setUserName(localStorage.getItem('lms_user_name') || 'Dr.Karunakar')
         }
         window.addEventListener('storage', handleStorage)
         return () => window.removeEventListener('storage', handleStorage)
@@ -22,6 +22,25 @@ export default function Certificate() {
     const completionDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     const certificateId = "AAI-2025-0892-X"
 
+    const handleShare = async () => {
+        const shareData = {
+            title: `Autonomous Agent Orchestration Certificate - ${userName}`,
+            text: `I've just successfully completed the Autonomous Agent Orchestration program!`,
+            url: window.location.href,
+        }
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData)
+            } else {
+                await navigator.clipboard.writeText(window.location.href)
+                alert('Link copied to clipboard!')
+            }
+        } catch (err) {
+            console.error('Error sharing:', err)
+        }
+    }
+
     if (!isCompleted) {
         return (
             <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-6">
@@ -30,7 +49,7 @@ export default function Certificate() {
                 </div>
                 <h2 className="text-3xl font-bold">Certification Locked</h2>
                 <p className="text-slate-500 max-w-md">
-                    Complete all module quizzes with at least 70% to unlock your professional certificate in Agentic AI Engineering.
+                    Complete all module quizzes with at least 70% to unlock your professional certificate in Autonomous Agent Orchestration.
                 </p>
                 <Button className="bg-primary hover:bg-orange-600 text-white rounded-xl h-12 px-8 font-bold">
                     Return to Curriculum
@@ -43,7 +62,7 @@ export default function Certificate() {
         <div className="w-full px-6 md:px-12 space-y-12 pb-20">
             <div className="text-center space-y-4">
                 <h1 className="text-4xl font-bold tracking-tight">Your Achievement</h1>
-                <p className="text-slate-500 text-lg font-medium">Congratulations! You've successfully completed the Agentic AI Engineering program.</p>
+                <p className="text-slate-500 text-lg font-medium">Congratulations! You've successfully completed the Autonomous Agent Orchestration program.</p>
             </div>
 
             <motion.div
@@ -63,8 +82,8 @@ export default function Certificate() {
                                 <GraduationCap className="w-7 h-7 text-white" />
                             </div>
                             <div className="text-left font-bold tracking-tight">
-                                <p className="text-slate-900 dark:text-white text-xl leading-none">AGENTIC AI</p>
-                                <p className="text-[10px] text-primary uppercase tracking-widest mt-1">Foundations 2025</p>
+                                <p className="text-slate-900 dark:text-white text-xl leading-none uppercase">Autonomous Agent</p>
+                                <p className="text-[10px] text-primary uppercase tracking-widest mt-1">Orchestration 2025</p>
                             </div>
                         </div>
                         <div className="text-right">
@@ -84,7 +103,7 @@ export default function Certificate() {
                         <div className="max-w-2xl mx-auto border-t border-b border-slate-100 dark:border-slate-800 py-6">
                             <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                                 Has successfully mastered the core principles and implementation strategies of
-                                <span className="text-slate-900 dark:text-white font-bold ml-1">Agentic AI Architecture</span>,
+                                <span className="text-slate-900 dark:text-white font-bold ml-1">Autonomous Agent Orchestration</span>,
                                 including Frameworks, RAG Systems, Multi-Agent Orchestration, and Real-World Deployment.
                             </p>
                         </div>
@@ -111,10 +130,11 @@ export default function Certificate() {
             </motion.div>
 
             <div className="flex justify-center gap-6">
-                <Button className="bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl h-14 px-8 font-bold gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all">
-                    <Download className="w-5 h-5" /> Download PDF
-                </Button>
-                <Button variant="outline" className="border-slate-200 dark:border-slate-800 rounded-2xl h-14 px-8 font-bold gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                <Button
+                    onClick={handleShare}
+                    variant="outline"
+                    className="border-slate-200 dark:border-slate-800 rounded-2xl h-14 px-8 font-bold gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                >
                     <Share2 className="w-5 h-5" /> Share Achievement
                 </Button>
             </div>

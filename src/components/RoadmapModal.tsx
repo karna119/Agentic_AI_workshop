@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trophy, Star, Target, Flag } from 'lucide-react'
 import { Button } from './ui/button'
 import { RoadmapInfographic } from './VisualAssets'
+import { curriculum } from '@/data/curriculum'
 
 interface RoadmapModalProps {
     isOpen: boolean
@@ -10,6 +11,23 @@ interface RoadmapModalProps {
 }
 
 export const RoadmapModal = ({ isOpen, onClose }: RoadmapModalProps) => {
+    const [progress, setProgress] = useState(0)
+
+    useEffect(() => {
+        const calculateProgress = () => {
+            const saved = localStorage.getItem('lms_completed_subtopics')
+            const completed = saved ? JSON.parse(saved).length : 0
+            const total = curriculum.reduce((acc, mod) => {
+                return acc + mod.topics.reduce((tAcc, topic) => tAcc + topic.subtopics.length, 0)
+            }, 0)
+            setProgress(total === 0 ? 0 : Math.round((completed / total) * 100))
+        }
+
+        if (isOpen) {
+            calculateProgress()
+        }
+    }, [isOpen])
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -58,12 +76,12 @@ export const RoadmapModal = ({ isOpen, onClose }: RoadmapModalProps) => {
                             <div className="mt-8 space-y-4">
                                 <div className="flex items-center justify-between px-1">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Progress</span>
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">45% Complete</span>
+                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">{progress}% Complete</span>
                                 </div>
                                 <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <motion.div
                                         initial={{ width: 0 }}
-                                        animate={{ width: '45%' }}
+                                        animate={{ width: `${progress}%` }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
                                         className="h-full bg-primary shadow-[0_0_15px_rgba(249,115,22,0.5)]"
                                     />

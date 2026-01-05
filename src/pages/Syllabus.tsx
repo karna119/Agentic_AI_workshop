@@ -20,6 +20,25 @@ export default function Syllabus() {
     const [activeModuleId, setActiveModuleId] = useState<string>(syllabusData[0].id)
     const activeModule = syllabusData.find(m => m.id === activeModuleId) || syllabusData[0]
 
+    const handleShare = async () => {
+        const shareData = {
+            title: 'Autonomous Agent Orchestration Syllabus',
+            text: 'Check out this comprehensive Autonomous Agent Orchestration curriculum!',
+            url: window.location.href,
+        }
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData)
+            } else {
+                await navigator.clipboard.writeText(window.location.href)
+                alert('Link copied to clipboard!')
+            }
+        } catch (err) {
+            console.error('Error sharing:', err)
+        }
+    }
+
     return (
         <div className="w-full px-6 md:px-12 space-y-10 pb-20">
             {/* Header Section */}
@@ -28,15 +47,16 @@ export default function Syllabus() {
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
                         Course Syllabus
                     </div>
-                    <h1 className="text-4xl font-extrabold tracking-tight">Agentic AI Engineering</h1>
+                    <h1 className="text-4xl font-extrabold tracking-tight">Autonomous Agent Orchestration</h1>
                     <p className="text-slate-500 font-medium">Foundations, Architectures, and Implementation • 18 Total Hours</p>
                 </div>
                 <div className="flex gap-4">
-                    <Button variant="outline" className="gap-2 border-slate-200 dark:border-slate-800 rounded-xl h-12 shadow-sm">
+                    <Button
+                        onClick={handleShare}
+                        variant="outline"
+                        className="gap-2 border-slate-200 dark:border-slate-800 rounded-xl h-12 shadow-sm"
+                    >
                         <Share2 className="w-4 h-4" /> Share
-                    </Button>
-                    <Button className="gap-2 bg-primary hover:bg-orange-600 text-white rounded-xl h-12 px-6 shadow-lg shadow-primary/20">
-                        <Download className="w-4 h-4" /> Download Full PDF
                     </Button>
                 </div>
             </div>
@@ -88,7 +108,7 @@ export default function Syllabus() {
                                 </div>
                                 <h4 className="font-bold">Next Steps</h4>
                             </div>
-                            <p className="text-sm text-slate-400 mb-6">Start your journey today and earn a professional certificate in Agentic AI Engineering.</p>
+                            <p className="text-sm text-slate-400 mb-6">Start your journey today and earn a professional certificate in Autonomous Agent Orchestration.</p>
                             <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl">
                                 Begin Course
                             </Button>

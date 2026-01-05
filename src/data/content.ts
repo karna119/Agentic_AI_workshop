@@ -56,376 +56,376 @@ export interface Reference {
 export const labs: Lab[] = [
   {
     id: "lab-1",
-    title: "Custom Tool Implementation",
+    title: "Secure Tool Engineering",
     module: 3,
-    difficulty: "beginner",
+    difficulty: "intermediate",
     duration: "1.5 hours",
-    description: "Learn to implement custom tools using LangChain's BaseTool structure.",
+    description: "Build production-grade tools with Pydantic validation and security guardrails for LLM consumption.",
     objectives: [
-      "Understand the BaseTool class structure",
-      "Define input schemas using Pydantic",
-      "Implement tool execution logic",
-      "Handle tool errors gracefully",
+      "Implement robust input validation using Pydantic V2",
+      "Design secure interfaces for data access",
+      "Handle tool execution errors without breaking the agent loop",
+      "Implement audit logging for sensitive operations"
     ],
-    prerequisites: ["Basic Python knowledge", "Module 3 completion"],
-    content: `# Custom Tool Implementation Lab
+    prerequisites: ["Python 3.10+", "Understanding of LLM tool calling"],
+    content: `# Secure Tool Engineering Lab
 
-## Overview
-In this lab, you'll create a custom tool that extends the LLM's capabilities. You'll learn how to:
-- Define tool schemas
-- Implement execution logic
-- Handle errors and edge cases
-- Integrate with LangChain agents
+## The Challenge
+AI Agents often need to interact with sensitive databases. A naive "SQL Tool" is a massive security risk. In this lab, you'll build a **Secure Data Connector** that uses structured schemas to prevent prompt injection and unauthorized access.
 
-## Step 1: Understanding BaseTool
-The BaseTool class is the foundation for all custom tools in LangChain. It requires:
-- A unique name
-- A detailed description
-- An input schema (Pydantic BaseModel)
-- A _run method for synchronous execution
-- An _arun method for asynchronous execution
+## Step 1: Defining the Guardrail Schema
+Instead of raw strings, we use Pydantic to strictly define what the Agent can request.
 
-## Step 2: Define Input Schema
-Use Pydantic to define what arguments your tool accepts:
 \`\`\`python
 from pydantic import BaseModel, Field
+from typing import Optional
 
-class CalculatorInput(BaseModel):
-    a: float = Field(description="First number")
-    b: float = Field(description="Second number")
+class UserQuerySchema(BaseModel):
+    user_id: str = Field(pattern=r"^USR-\\d{4}$", description="ID in USR-XXXX format")
+    table_scope: str = Field(pattern="^(profile|activity)$", description="Restricted to specific tables")
+    include_pii: bool = Field(default=False)
 \`\`\`
 
-## Step 3: Implement Tool Class
-Create your tool by extending BaseTool and implementing the _run method:
+## Step 2: Implementing the Secure Tool
+We wrap the data access in a class that enforces these constraints before hitting the database.
+
 \`\`\`python
 from langchain.tools import BaseTool
 
-class SimpleAdderTool(BaseTool):
-    name = "simple_adder"
-    description = "Adds two numbers together"
-    args_schema = CalculatorInput
-    
-    def _run(self, a: float, b: float) -> str:
-        result = a + b
-        return f"The sum of {a} and {b} is {result}"
+class SecureAuthenticator(BaseTool):
+    name = "secure_user_explorer"
+    description = "Retrieves user records from a restricted secure store."
+    args_schema = UserQuerySchema
+
+    def _run(self, user_id: str, table_scope: str, include_pii: bool) -> str:
+        # Internal security check
+        if include_pii and not self.metadata.get("authorized_agent"):
+            return "Error: Security policy violation. PII access denied."
+            
+        return f"Fetching {table_scope} data for {user_id}... [ENCRYPTED SUCCESS]"
 \`\`\`
 
-## Step 4: Test Your Tool
-Test the tool to ensure it works correctly:
+![Tool Security INFOGRAPHIC:TOOL_ANATOMY]
+
+## Step 3: Handling Edge Cases
+Agents often hallucinate parameters. Your tool must provide clear, actionable error messages back to the LLM so it can self-correct.
+
 \`\`\`python
-tool = SimpleAdderTool()
-result = tool._run(a=5, b=3)
-print(result)  # Output: The sum of 5 and 3 is 8
+def _run(self, **kwargs):
+    try:
+        return self.database.execute(kwargs)
+    except ValidationError as e:
+        return f"Correction needed: Your input didn't match the required format. {str(e)}"
 \`\`\`
-
-![Tool Anatomy]([INFOGRAPHIC:TOOL_ANATOMY])
 
 ## Challenges
-1. Create a SimpleMultiplierTool that multiplies two numbers
-2. Add input validation to ensure numbers are positive
-3. Implement error handling for invalid inputs
-4. Create a tool that combines multiple operations
+1. Implement a rate-limit decorator for the tool.
+2. Add a 'dry_run' parameter to the schema.
+3. Create a secondary tool that validates SQL tokens.
 `,
-    codeFile: "/home/ubuntu/module3_tool_lab.py",
+    codeFile: "secure_connector_v1.py",
     challenges: [
-      "Create a SimpleMultiplierTool for multiplication",
-      "Add validation to ensure inputs are within a valid range",
-      "Implement a tool that performs multiple operations sequentially",
-      "Create an async version of your tool using _arun",
+      "Add Regex validation for multi-tenant IDs",
+      "Implement a ToolException handler for LangChain",
+      "Create an asynchronous arun method for high-concurrency"
     ],
     steps: [
-      { title: "Define Schema", detail: "Create the Pydantic model for tool arguments.", status: 'current' },
-      { title: "Inherit BaseTool", detail: "Create a class that extends the LangChain BaseTool.", status: 'pending' },
-      { title: "Implement _run", detail: "Write the logic for synchronous execution.", status: 'pending' },
-      { title: "Verification", detail: "Run the tool with test inputs to check results.", status: 'pending' }
+      { title: "Schema Design", detail: "Define strict Pydantic models with Regex patterns.", status: 'completed' },
+      { title: "Tool Wrapping", detail: "Inherit from BaseTool and map the args_schema.", status: 'current' },
+      { title: "Sanitization", detail: "Implement internal logic to scrub sensitive outputs.", status: 'pending' },
+      { title: "Simulation", detail: "Dry-run the tool inside a localized agent loop.", status: 'pending' }
     ],
     simulationLogs: [
-      { type: 'system', message: 'Initializing Tool Development Environment...' },
-      { type: 'thought', message: 'I need to create a tool that can perform mathematical additions reliably.' },
-      { type: 'action', message: 'Importing Pydantic and LangChain Tooling...' },
-      { type: 'observation', message: 'Standard modules loaded (pydantic==2.5.2, langchain==0.1.0).' },
-      { type: 'thought', message: 'Defining CalculatorInput schema with two floats: a and b.' },
-      { type: 'action', message: 'Validating Pydantic BaseModel structure...' },
-      { type: 'system', message: 'Schema validated. No conflicts detected.' },
-      { type: 'thought', message: 'Implementing SimpleAdderTool(BaseTool) with _run method.' },
-      { type: 'action', message: 'Executing unit tests for SimpleAdderTool...' },
-      { type: 'observation', message: 'Tests passed: 5 + 3 = 8.0' },
-      { type: 'system', message: 'Tool registration successful. Ready for agent integration.' }
+      { type: 'system', message: 'Booting Secure Environment v2.4...' },
+      { type: 'thought', message: 'Agent requires access to USR-8829 data in the profile table.' },
+      { type: 'action', message: 'secure_user_explorer(user_id="USR-8829", table_scope="profile", include_pii=true)' },
+      { type: 'system', message: 'LOG: Intercepting PII Access Request...' },
+      { type: 'observation', message: 'Error: Access Denied. Agent metadata missing "HR_VERIFIED" token.' },
+      { type: 'thought', message: 'The security policy blocked PII. I will re-request without PII to fulfill the general data goal.' },
+      { type: 'action', message: 'secure_user_explorer(user_id="USR-8829", table_scope="profile", include_pii=false)' },
+      { type: 'observation', message: 'Success: { status: "Active", joined: "2023-01", tier: "Gold" }' },
+      { type: 'system', message: 'Audit log written to /logs/security/audit.log' }
     ]
   },
   {
     id: "lab-2",
-    title: "Building a ReAct Agent",
+    title: "Autonomous Cloud Ops",
     module: 4,
-    difficulty: "intermediate",
+    difficulty: "advanced",
     duration: "2 hours",
-    description: "Implement a simple ReAct (Reasoning and Acting) agent using LangChain.",
+    description: "Design a ReAct agent that can troubleshoot and resolve cloud infrastructure issues autonomously.",
     objectives: [
-      "Understand the ReAct pattern (Thought, Action, Observation)",
-      "Implement agent loop logic",
-      "Handle tool selection and execution",
-      "Manage agent scratchpad and history",
+      "Master the ReAct (Reason-Act) workflow for complex branching",
+      "Handle multi-step error recovery sequences",
+      "Implement observation-based branching logic",
+      "Prevent recursive API loops with max_iterations"
     ],
-    prerequisites: ["Module 1-3 completion", "Lab 1 completion"],
-    content: `# Building a ReAct Agent Lab
+    prerequisites: ["Module 4 Completion", "Basic Cloud CLI knowledge"],
+    content: `# Autonomous Cloud Ops Lab
 
-## Overview
-The ReAct pattern is fundamental to modern agentic AI. This lab teaches you to build an agent that:
-- Thinks through problems step-by-step
-- Chooses appropriate tools
-- Observes and learns from results
-- Iterates until the goal is achieved
+## The Scenario
+Your production server is returning 504 Gateway Timeouts. A human engineer is away. Your task is to build a ReAct agent that can investigate the logs, identify the bottleneck, and restart the necessary services.
 
-## The ReAct Pattern
+## The ReAct Loop
+The agent follows a cycle: **Thought → Action → Observation**.
 
-### Thought
-The agent's internal reasoning about what to do next:
+### Phase 1: Investigation
 \`\`\`
-Thought: I need to find information about weather in San Francisco
+Thought: The site is down. I need to check the load balancer health first.
+Action: cloud_provider.get_lb_health(target_group="web-front")
+Observation: 2 of 5 instances are "Unhealthy".
 \`\`\`
 
-### Action
-The agent selects and executes a tool:
+### Phase 2: Root Cause Analysis
 \`\`\`
-Action: get_current_weather(city="San Francisco")
-\`\`\`
-
-### Observation
-The result from the tool:
-\`\`\`
-Observation: The weather in San Francisco is 75°F and sunny
+Thought: LB shows unhealthy instances. I should check the CPU and Memory logs for instance "i-0abc123".
+Action: ssh_manager.tail_logs(instance_id="i-0abc123", lines=50)
+Observation: "Out of Memory: Killed process 881 (node)".
 \`\`\`
 
-## Implementation Steps
+![Cloud Orchestration INFOGRAPHIC:AGENT_LOOP]
 
-### Step 1: Define Your Tools
-Create tools that your agent can use:
+## Implementation Architecture
+
 \`\`\`python
-class WeatherTool:
-    name = "get_current_weather"
-    description = "Get current weather for a city"
-    
-    def run(self, city: str) -> str:
-        # Simulated weather data
-        return f"Weather in {city}: 75°F and sunny"
+from langchain.agents import initialize_agent, AgentType
+
+# 1. Provide the agent with specialized tools
+tools = [LogAnalyzer(), ServerRestarter(), HealthChecker()]
+
+# 2. Use the CHAT_CONVERSATIONAL_REACT_DESCRIPTION type
+agent = initialize_agent(
+    tools, 
+    llm, 
+    agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
+    max_iterations=5, # Safety guardrail
+    verbose=True
+)
 \`\`\`
 
-### Step 2: Implement the Agent Loop
-Create the main agent loop that orchestrates Thought, Action, Observation:
-\`\`\`python
-def run_agent(user_query):
-    history = []
-    
-    while not done:
-        # Thought: LLM reasons about next step
-        thought = llm.think(user_query, history)
-        history.append(("Thought", thought))
-        
-        # Action: LLM selects and executes tool
-        action = llm.select_tool(thought)
-        result = execute_tool(action)
-        history.append(("Action", action))
-        
-        # Observation: Store result
-        history.append(("Observation", result))
-        
-        # Check if done
-        if should_stop(result):
-            done = True
-    
-    return format_final_answer(history)
-\`\`\`
-
-### Step 3: Add Error Handling
-Handle tool failures gracefully:
-\`\`\`python
-try:
-    result = execute_tool(action)
-except ToolError as e:
-    result = f"Error: {str(e)}. Please try a different approach."
-\`\`\`
-
-![Tool Call Flow]([INFOGRAPHIC:TOOL_CALL_FLOW])
+## Safety First
+Autonomous actions in production are dangerous. You will learn to implement a "Confirmation Step" where the agent must wait for a human "OK" or a secondary "Safety Agent" approval.
 
 ## Challenges
-1. Add a second tool (e.g., get_forecast) and make the agent choose between them
-2. Implement a maximum iteration limit to prevent infinite loops
-3. Add a confidence score to the agent's decisions
-4. Implement tool result caching to avoid redundant calls
+1. Implement a 'rollback' tool in case the restart fails.
+2. Add a 'cost_aware' thought process to prevent expensive scaling.
+3. Integrate Slack notifications into every 'Action' step.
 `,
-    codeFile: "/home/ubuntu/module4_langchain_lab.py",
+    codeFile: "cloud_repair_agent.py",
     challenges: [
-      "Add a second tool and implement dynamic tool selection",
-      "Implement iteration limits and early stopping",
-      "Add logging to track all Thought, Action, Observation steps",
-      "Create a tool that uses results from previous tools",
+      "Limit the agent to read-only tools initially",
+      "Implement a 'human-in-the-loop' breakpoint",
+      "Handle JSON-parsing errors from the LLM output"
     ],
     steps: [
-      { title: "Agent Setup", detail: "Initialize the LLM and memory components.", status: 'current' },
-      { title: "Tool Mapping", detail: "Define the set of tools available to the agent.", status: 'pending' },
-      { title: "ReAct Loop", detail: "Implement the Thought-Action-Observation cycle.", status: 'pending' },
-      { title: "Final Conclusion", detail: "Handle the exit condition and final response.", status: 'pending' }
+      { title: "Environment Init", detail: "Configure the simulated AWS/GCP environment variables.", status: 'completed' },
+      { title: "Toolset Layout", detail: "Define the SSH, HTTP, and Cloud SDK tools.", status: 'current' },
+      { title: "Define ReAct Prompt", detail: "Craft the system instructions for the loop.", status: 'pending' },
+      { title: "Execution", detail: "Run the agent against a simulated memory leak.", status: 'pending' }
     ],
     simulationLogs: [
-      { type: 'system', message: 'Agent Brain Initialized. Model: gpt-4-turbo' },
-      { type: 'thought', message: 'Goal: Find the current weather in Paris and compare with London.' },
-      { type: 'action', message: 'get_weather(city="Paris")' },
-      { type: 'observation', message: 'Paris: 12°C, Overcast. Humidity: 82%.' },
-      { type: 'thought', message: 'Paris found. Now checking London for comparison data.' },
-      { type: 'action', message: 'get_weather(city="London")' },
-      { type: 'observation', message: 'London: 10°C, Rain. Wind: 15km/h NW.' },
-      { type: 'thought', message: 'Paris (12°C) is slightly warmer than London (10°C). Generating comparison report.' },
-      { type: 'action', message: 'format_output(data=["Paris", "London"])' },
-      { type: 'observation', message: 'Report formatted successfully.' },
-      { type: 'system', message: 'Task complete. Returning final answer to user.' }
+      { type: 'system', message: 'Monitoring System: 504 ERROR DETECTED' },
+      { type: 'thought', message: 'Site is unreachable. Starting diagnostics on Nginx cluster.' },
+      { type: 'action', message: 'check_endpoint("https://api.prod.svc")' },
+      { type: 'observation', message: 'Timeout. Server failed to respond in 30s.' },
+      { type: 'thought', message: 'Nginx is timing out. Likely the upstream Go service is crashed. Checking pod status.' },
+      { type: 'action', message: 'k8s_get_pods(namespace="backend")' },
+      { type: 'observation', message: 'pod/order-svc-x29: OOMKilled, Restarts: 12' },
+      { type: 'thought', message: 'Detected memory leak on order-svc. Requesting transient memory increase before restart.' },
+      { type: 'action', message: 'k8s_patch_resources(pod="order-svc", mem="2Gi")' },
+      { type: 'observation', message: 'Patch applied. New limits active.' },
+      { type: 'action', message: 'k8s_restart_deployment("order-svc")' },
+      { type: 'system', message: 'Service RECOVERY: Traffic flow normalized.' }
     ]
   },
   {
     id: "lab-3",
-    title: "Multi-Agent Crew Implementation",
+    title: "Production Crew Sync",
     module: 4,
     difficulty: "advanced",
     duration: "3 hours",
-    description: "Build a multi-agent system using CrewAI with specialized agents collaborating on a complex task.",
+    description: "Build a high-performance multi-agent crew for social media intelligence and automated response generation.",
     objectives: [
-      "Design specialized agents with distinct roles",
-      "Define tasks and dependencies",
-      "Implement hierarchical orchestration",
-      "Handle inter-agent communication",
+      "Master CrewAI's hierarchical process for task delegation",
+      "Implement inter-agent state sharing",
+      "Configure 'Manager' agents for quality oversight",
+      "Deploy agents with specific personas and backstories"
     ],
-    prerequisites: ["Module 1-4 completion", "Lab 1 and 2 completion"],
-    content: `# Multi-Agent Crew Implementation Lab
+    prerequisites: ["Lab 1 & 2 Completion", "Basic understanding of Crew design"],
+    content: `# Production Crew Sync Lab
 
-## Overview
-In this advanced lab, you'll build a complete multi-agent system where specialized agents collaborate to solve complex problems.
+## The Objective
+Individual agents are limited. Production systems require **Crews**. In this lab, you'll orchestrate three specialized agents to perform real-time sentiment analysis and generate context-aware responses for a global brand.
 
-## System Architecture
+## Step 1: Defining the Specialized Personas
+Agents are defined by their **Role**, **Goal**, and **Backstory**.
 
-### Agent Roles
-1. **Researcher Agent**: Gathers information from multiple sources
-2. **Analyst Agent**: Synthesizes and analyzes the research
-3. **Writer Agent**: Creates polished content from analysis
-4. **Critic Agent**: Reviews and provides feedback
-
-### Task Flow
-\`\`\`
-Research → Analysis → Writing → Critique → Final Output
-\`\`\`
-
-## Implementation
-
-### Step 1: Define Agents
 \`\`\`python
 from crewai import Agent
 
+# The Scraper: Finds data
 researcher = Agent(
-    role="Senior Research Analyst",
-    goal="Find and summarize latest trends",
-    backstory="Expert in AI frameworks with deep research skills",
-    tools=[search_tool, rag_tool],
-    verbose=True
+  role='Global Data Scout',
+  goal='Discover trending conversations about Brand X',
+  backstory='Expert in digital signal processing and social trends.',
+  tools=[SearchTool()]
 )
 
-writer = Agent(
-    role="Technical Writer",
-    goal="Write compelling technical content",
-    backstory="Professional writer skilled in technical topics",
-    tools=[],
-    verbose=True
+# The Analyst: Thinks deep
+analyst = Agent(
+  role='Sentiment Architect',
+  goal='Categorize signals into positive, negative, or neutral',
+  backstory='PhD in Behavioral Economics; ignores noise, focuses on intent.'
 )
 \`\`\`
 
-### Step 2: Define Tasks
+## Step 2: Task Orchestration
+Tasks link agents together. The Analyst's input is the Researcher's output.
+
 \`\`\`python
 from crewai import Task
 
-research_task = Task(
-    description="Research the latest developments in Agentic AI",
-    agent=researcher,
-    expected_output="Comprehensive research summary"
-)
-
-writing_task = Task(
-    description="Write a 500-word blog post based on research",
-    agent=writer,
-    context=[research_task],
-    expected_output="Polished blog post in Markdown"
+analysis_task = Task(
+  description='Analyze the context of 10 recent tweets.',
+  agent=analyst,
+  context=[research_task], # Sequential dependency
+  expected_output='A JSON map of sentiment scores.'
 )
 \`\`\`
 
-### Step 3: Create and Execute Crew
+![Orchestration Flow INFOGRAPHIC:ORCHESTRATION]
+
+## Step 3: Managing the Factory
+Using the **Hierarchical Process**, we assign a Manager agent to ensure the output is polished and brand-safe.
+
 \`\`\`python
 from crewai import Crew, Process
 
-crew = Crew(
-    agents=[researcher, writer],
-    tasks=[research_task, writing_task],
-    process=Process.sequential,
-    verbose=2
-)
-
-result = crew.kickoff()
-\`\`\`
-
-## Advanced Features
-
-### Hierarchical Process
-Use a manager agent to coordinate others:
-\`\`\`python
-crew = Crew(
-    agents=[manager, researcher, writer, critic],
-    tasks=[...],
-    process=Process.hierarchical,
-    manager_agent=manager
+production_crew = Crew(
+  agents=[researcher, analyst, writer],
+  tasks=[t1, t2, t3],
+  process=Process.hierarchical,
+  manager_llm=gpt_4_manager
 )
 \`\`\`
-
-### Error Handling and Retries
-Implement robust error handling:
-\`\`\`python
-try:
-    result = crew.kickoff()
-except AgentError as e:
-    # Implement retry logic
-    result = crew.kickoff(max_retries=3)
-\`\`\`
-
-![Orchestration Flow]([INFOGRAPHIC:ORCHESTRATION])
 
 ## Challenges
-1. Add a Critic agent that reviews the Writer's output
-2. Implement feedback loops where the Writer revises based on Critic feedback
-3. Add tool result caching to improve performance
-4. Create a monitoring dashboard to track agent progress
+1. Implement a 5-minute timeout for the whole crew.
+2. Add a 'Human Approval' step before the writer publishes.
+3. Force the Analyst to output strictly in YAML format.
 `,
-    codeFile: "/home/ubuntu/module4_crewai_lab.py",
+    codeFile: "social_intel_crew.py",
     challenges: [
-      "Implement a feedback loop between Writer and Critic agents",
-      "Add a Manager agent using hierarchical orchestration",
-      "Create tool result caching to avoid redundant API calls",
-      "Build a complete content creation pipeline with 4+ agents",
+      "Integrate inter-agent collaboration (shared state)",
+      "Implement a custom CrewAI Process",
+      "Add Pydantic-based output validation for tasks"
     ],
     steps: [
-      { title: "Define Agents", detail: "Create Researcher, Writer, and Critic agents with roles/backstories.", status: 'current' },
-      { title: "Task Definition", detail: "Define research, writing, and review tasks with dependencies.", status: 'pending' },
-      { title: "Crew Assembly", detail: "Assemble the agents into a sequential or hierarchical process.", status: 'pending' },
-      { title: "Execution Trace", detail: "Run the crew and observe agent collaboration logs.", status: 'pending' }
+      { title: "Agent Persona Design", detail: "Define unique roles and backstories for 3 agents.", status: 'completed' },
+      { title: "Task Wiring", detail: "Chain tasks so outputs become inputs for the next stage.", status: 'current' },
+      { title: "Manager Injection", detail: "Introduce a high-reasoning model as the crew manager.", status: 'pending' },
+      { title: "Deployment", detail: "Run the full pipeline on live data streams.", status: 'pending' }
     ],
     simulationLogs: [
-      { type: 'system', message: 'CrewAI Orchestrator v1.2.0 Initialized.' },
-      { type: 'thought', message: 'Project: Long-form technical report on "AI Agent Governance".' },
-      { type: 'system', message: 'Delegating [Research Task] to Researcher Agent.' },
-      { type: 'thought', message: 'Searching latest Arxiv papers for "Agentic AI Safety"...' },
-      { type: 'action', message: 'search_arxiv(query="Agentic AI Safety", limit=5)' },
-      { type: 'observation', message: 'Found 12 relevant papers. Summarizing top 3.' },
-      { type: 'thought', message: 'Research complete. Passing findings to Writer Agent.' },
-      { type: 'action', message: 'delegate_to_writer(context=research_summary)' },
-      { type: 'thought', message: 'Writer is drafting content. Monitoring progress...' },
-      { type: 'system', message: 'Draft received from Writer. Escalating to Critic Agent for review.' },
-      { type: 'thought', message: 'Critic is evaluating factual accuracy and tone.' },
-      { type: 'observation', message: 'Critic found 2 minor errors. Requesting revisions.' },
-      { type: 'system', message: 'Revision cycle complete. Finalizing output.' },
-      { type: 'system', message: 'COMPLETED: AI Agent Governance Report generated successfully.' }
+      { type: 'system', message: 'CrewAI Engine: Sequential Mode Initialized' },
+      { type: 'thought', message: 'Project: Real-time Signal Processing for "Agentic AI" hashtag.' },
+      { type: 'action', message: 'delegate(agent="ResearchScout", task="Find 5 top posts")' },
+      { type: 'thought', message: 'Scout: Scanning platform X and Reddit... Filters active.' },
+      { type: 'observation', message: 'Found: 5 mentions. Sentiment appears polarized.' },
+      { type: 'action', message: 'delegate(agent="Analyst", task="Determine root cause of polarity")' },
+      { type: 'observation', message: 'Analyst: 60% concerns about state persistence, 40% praise for speed.' },
+      { type: 'thought', message: 'Sending analysis to Manager Agent for brand-safe response drafting.' },
+      { type: 'action', message: 'manager.review_content(context=analyst_output)' },
+      { type: 'system', message: 'Manager: Content approved. Routing to Output channel.' },
+      { type: 'system', message: 'SUCCESS: Crew cycle finished in 42.5s.' }
+    ]
+  },
+  {
+    id: "lab-4",
+    title: "Persistent Memory Architecture",
+    module: 5,
+    difficulty: "advanced",
+    duration: "2.5 hours",
+    description: "Implement long-term vector memory and short-term state persistence using Redis for stateful AI agents.",
+    objectives: [
+      "Understand the difference between buffer, summary, and vector memory",
+      "Implement Redis-backed session persistence",
+      "Design a 'Retrieval-Driven' agent that learns from past interactions",
+      "Manage memory context windows to prevent token overflows"
+    ],
+    prerequisites: ["Lab 1-3 Completion", "Understanding of Vector Embeddings"],
+    content: `# Persistent Memory Architecture Lab
+
+## The Problem
+Standard agents are "Goldfish"—they forget everything once the script ends. To build a true colleague, your agent needs a **Long-Term Memory (LTM)**.
+
+## Step 1: Short-Term State (Redis)
+We use Redis to store the ongoing conversation state so the agent can resume after a crash.
+
+\`\`\`python
+from langchain.memory import RedisChatMessageHistory
+
+history = RedisChatMessageHistory(
+    session_id="user_123_session_01",
+    url="redis://localhost:6379"
+)
+
+# Agent now retrieves history on every start
+memory = ConversationBufferMemory(chat_memory=history)
+\`\`\`
+
+## Step 2: Long-Term Memory (Semantic)
+LTM uses a Vector Database. When a user asks something, the agent searches for *similar* things from 6 months ago.
+
+\`\`\`python
+from langchain.vectorstores import Pinecone
+
+# The "Thought Search" tool
+ltm_tool = create_retrieval_tool(
+    vector_store.as_retriever(),
+    "past_knowledge_search",
+    "Search previous solved tickets and engineering docs."
+)
+\`\`\`
+
+![Memory Systems INFOGRAPHIC:MEMORY_MGMT]
+
+## Step 3: Executive Memory Management
+Too much memory confuses the agent. You'll learn to implement **Summary Culling**—where old messages are compressed into a 1-paragraph summary by a secondary LLM.
+
+\`\`\`python
+memory = ConversationSummaryBufferMemory(
+    llm=summary_model,
+    max_token_limit=1000
+)
+\`\`\`
+
+## Challenges
+1. Implement a 'Forgetting' tool for GDRP compliance.
+2. Rank memories by 'relevance' AND 'recency'.
+3. Build a shared memory pool for two different agents.
+`,
+    codeFile: "persistent_agent.py",
+    challenges: [
+      "Implement Semantic search over chat history",
+      "Manage buffer window pruning",
+      "Build a multi-session Redis coordinator"
+    ],
+    steps: [
+      { title: "Memory Buffer Init", detail: "Set up the basic conversation buffer window.", status: 'completed' },
+      { title: "Vector Persistence", detail: "Connect the agent to a persistent Chroma/Pinecone DB.", status: 'current' },
+      { title: "Summary Logic", detail: "Implement a compression agent for old context.", status: 'pending' },
+      { title: "Verification", detail: "Test if the agent remembers a secret from session 1 in session 2.", status: 'pending' }
+    ],
+    simulationLogs: [
+      { type: 'system', message: 'Memory Controller: Redis Connection OK' },
+      { type: 'thought', message: 'Resuming session USR_77. Retrieving last 50 summary tokens...' },
+      { type: 'observation', message: 'CONTEXT: User previously discussed Lab 2 deployment errors.' },
+      { type: 'thought', message: 'The user is asking about the "same error". I will query LTM for "Lab 2 deployment errors".' },
+      { type: 'action', message: 'ltm_search(query="Lab 2 deployment error solution")' },
+      { type: 'observation', message: 'Vector Search Result: Solution was to increase RAM limits via k8s-patch.' },
+      { type: 'thought', message: 'I now have the historical context. I will remind the user of the k8s solution.' },
+      { type: 'system', message: 'STATUS: Contextual recall successful.' }
     ]
   },
 ];
@@ -441,23 +441,21 @@ export const caseStudies: CaseStudy[] = [
     problem: "Software development is time-consuming and error-prone. Developers spend significant time on repetitive tasks like code generation, testing, and debugging.",
     solution: "An agentic system that can understand requirements, generate code, run tests, and fix issues autonomously.",
     agenticApproach: `
-## Architecture
-- **Planner Agent**: Breaks down requirements into implementation steps
-- **Coder Agent**: Generates code based on the plan
-- **Tester Agent**: Runs tests and identifies failures
-- **Debugger Agent**: Analyzes failures and fixes code
-- **Critic Agent**: Reviews code quality and suggests improvements
+## Architecture: The Self-Healing Ecosystem
+- **Planner Agent**: Uses Hierarchical Planning to break multi-file requirements into a 'Dependency Graph'.
+- **Coder Agent**: Writes code in an isolated Docker sandbox to prevent host pollution.
+- **Tester Agent**: Generates edge-case unit tests dynamically based on the Coder's output.
+- **Debugger Agent**: Interprets traceback logs to identify logic errors vs. syntax errors.
+- **Critic Agent**: Enforces 'Clean Code' principles and security best practices (e.g., checking for exposed API keys).
 
 ![Multi-Agent Coordination Mindmap]([MINDMAP:MULTI_AGENT])
 
-## Workflow
-1. User provides requirements
-2. Planner creates a detailed implementation plan
-3. Coder generates initial code
-4. Tester runs unit and integration tests
-5. If tests fail, Debugger fixes issues
-6. Critic reviews final code
-7. Output: Production-ready code with full test coverage
+## Workflow: The Self-Correction Loop
+1. **Requirements Analysis**: Planner creates a \`roadmap.json\`.
+2. **Drafting**: Coder generates files.
+3. **Execution**: Tester runs the code.
+4. **Correction**: If a test fails, the Debugger analyzes the *reason* and instructs the Coder on a specific fix. 
+5. **Final Audit**: Critic approves only when all tests pass AND quality scores are > 90%.
     `,
     keyTakeaways: [
       "Agents can handle complex, multi-step technical tasks",
@@ -501,27 +499,22 @@ export const caseStudies: CaseStudy[] = [
     problem: "Financial analysts need to monitor multiple data sources, synthesize complex information, and make timely trading decisions. Manual analysis is slow and prone to human error.",
     solution: "An agentic system that continuously monitors markets, analyzes trends, generates reports, and executes trades based on predefined strategies.",
     agenticApproach: `
-## System Architecture
-- **Market Monitor Agent**: Continuously tracks market data and news
-- **Analyst Agent**: Performs technical and fundamental analysis
-- **Report Generator Agent**: Creates comprehensive market reports
-- **Risk Manager Agent**: Evaluates risk and sets position limits
-- **Trader Agent**: Executes trades based on analysis and risk parameters
+## System Architecture: Multi-Agent Intelligence
+- **Market Monitor Agent**: Scrapes financial news and live WebSocket feeds for volatility signals.
+- **Analyst Agent**: Uses RAG to compare current signals with 'Black Swan' events from 2008 and 2020.
+- **Risk Manager Agent**: Enforces the 'Hard Stop' rule—if a trade exceeds 2% of the total portfolio, it's auto-rejected.
+- **Trader Agent**: Executes orders via authenticated APIs with strict token rotation.
 
-## Data Flow
-1. Market Monitor fetches real-time data from multiple sources
-2. Analyst performs complex analysis using RAG for historical context
-3. Report Generator creates executive summaries
-4. Risk Manager evaluates potential trades
-5. Trader executes approved trades with proper risk controls
+## Data Flow & Guardrails
+1. **Signal Detection**: Monitor identifies a high-volume breakout.
+2. **Semantic Analysis**: Analyst checks if the news is 'noise' vs. 'signal' using historical context.
+3. **Safety Check**: Risk Manager audits the proposed trade against the 'Margin Policy'.
+4. **Execution**: Trader only fires after all three preceding agents provide a 'JSON Signed' approval.
 
 ![Risk Matrix]([INFOGRAPHIC:SAFETY])
 
-## Key Features
-- Real-time market monitoring
-- Multi-source data integration (news, price feeds, economic indicators)
-- Risk-aware decision making
-- Audit trail for all trades and decisions
+> [!IMPORTANT]
+> **Real-World Guardrail**: This system implements a 'Kill Switch'—if any agent experiences > 3 consecutive tool-call errors, the entire crew hibernates to prevent runaway trading.
     `,
     keyTakeaways: [
       "Agents excel at continuous monitoring and reactive decision-making",
@@ -568,25 +561,21 @@ export const caseStudies: CaseStudy[] = [
     problem: "Support teams are overwhelmed with tickets of varying complexity. Simple issues are handled slowly, and complex issues often require multiple handoffs.",
     solution: "An agentic system that automatically triages tickets, attempts resolution for simple issues, and intelligently routes complex issues to human experts.",
     agenticApproach: `
-## System Components
-- **Triage Agent**: Analyzes tickets and categorizes by complexity
-- **Knowledge Base Agent**: Searches company knowledge base for solutions
-- **Diagnostic Agent**: Performs troubleshooting for technical issues
-- **Escalation Agent**: Routes complex issues to appropriate human experts
-- **Follow-up Agent**: Ensures customer satisfaction and closes resolved tickets
+## Architecture: The Intelligent Buffer
+- **Triage Agent**: Categorizes tickets by sentiment and technical 'tags' (e.g., #Billing, #Hardware).
+- **Knowledge Base Agent**: Uses Semantic Search to find matching documentation in the 'Support Vault'.
+- **Diagnostic Agent**: If the ticket is technical, this agent initiates a 'SSH Probe' tool to check server logs.
+- **Escalation Agent**: If resolution takes > 3 steps, this agent packages the 'Thought Trace' and sends it to a human expert.
 
-## Ticket Resolution Flow
-1. Ticket arrives and is analyzed by Triage Agent
-2. If simple: Knowledge Base Agent searches for solution
-3. If technical: Diagnostic Agent runs troubleshooting steps
-4. If unresolved: Escalation Agent routes to expert
-5. Once resolved: Follow-up Agent confirms satisfaction
+## Resolution Flow
+1. **Intake**: Triage identifies the issue type.
+2. **Context Retrieval**: KB Agent provides relevant snippets.
+3. **Reasoning**: The LLM determines if it can solve the issue with its available tools.
+4. **Handover**: If it cannot, a summary of all *failed* attempts is sent to a human, reducing diagnostic time by 50%.
 
 ## Success Metrics
-- First-contact resolution rate
-- Average resolution time
-- Customer satisfaction score
-- Reduction in escalations
+- **Mean Time to Resolution (MTTR)**: Reduced by 4 hours on average.
+- **Deflection Rate**: 60% of tickets solved without human touch.
     `,
     keyTakeaways: [
       "Agents can significantly improve customer experience through intelligent routing",
@@ -630,28 +619,20 @@ export const caseStudies: CaseStudy[] = [
     problem: "Content creation is resource-intensive, requiring research, writing, editing, and distribution across multiple platforms.",
     solution: "A multi-agent system that researches topics, generates content, optimizes for different platforms, and manages publication.",
     agenticApproach: `
-## Agent Team
-- **Researcher Agent**: Gathers information from multiple sources
-- **Writer Agent**: Creates engaging, well-structured content
-- **Editor Agent**: Reviews for clarity, tone, and accuracy
-- **SEO Agent**: Optimizes for search engines
-- **Publisher Agent**: Formats and distributes across platforms
+## The Content Factory: Role-Based Coordination
+- **Researcher Agent**: Scrapes 'ArXiv' and 'Substack' to find the 5 most influential daily tech signals.
+- **Writer Agent**: Converts facts into 'Themed Drafts' (e.g., 'The Future of Agency').
+- **Editor Agent**: A high-reasoning model (e.g., Claude 3.5 Sonnet) focused on tone consistency.
+- **SEO Agent**: Injects keywords without breaking the narrative flow.
+- **Publisher Agent**: Formats the final markdown into HTML for Web and 'Thread-style' for Social Media.
 
-## Content Pipeline
-1. Topic selection and research
-2. Content generation with proper structure
-3. Editorial review and revisions
-4. SEO optimization
-5. Multi-platform formatting (blog, social media, email)
-6. Scheduled publication
+## Pipeline Orchestration
+1. **Fact-Finding**: Researcher identifies a trending topic.
+2. **Drafting**: Writer creates a 1000-word draft.
+3. **Looping**: Editor reviews. If tone score < 8, it's sent back to the Writer with specific feedback.
+4. **Distribution**: Publisher agent splits the primary article into 10 'Micro-posts' for cross-platform reach.
 
 ![Memory Systems]([INFOGRAPHIC:MEMORY_MGMT])
-
-## Platform Optimization
-- Blog: Long-form, SEO-optimized content
-- Twitter: Concise, engaging summaries
-- LinkedIn: Professional insights
-- Email: Personalized newsletters
     `,
     keyTakeaways: [
       "Agents can automate entire workflows from start to finish",
